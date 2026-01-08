@@ -38,14 +38,11 @@ fun AppNavGraph() {
         // --- MÀN HÌNH 2: TRANG CHỦ ---
         composable(AppRoutes.HOME) {
             HomeScreen(
-                onLogout = {
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                onNavigateToOrders = {
-                    // CẬP NHẬT Ở ĐÂY: Không log nữa mà chuyển trang thật
-                    navController.navigate(AppRoutes.ORDER_MANAGEMENT)
+                onLogout = { /* logic logout */ },
+                onNavigateToOrders = { navController.navigate(AppRoutes.ORDER_MANAGEMENT) },
+                // Thêm dòng này:
+                onNavigateToDetail = { orderId ->
+                    navController.navigate("${AppRoutes.ORDER_DETAIL}/$orderId")
                 }
             )
         }

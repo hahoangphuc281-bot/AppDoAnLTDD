@@ -17,19 +17,14 @@ class OrderViewModel : ViewModel() {
         fetchOrdersFromApi()
     }
 
-    private fun fetchOrdersFromApi() {
+    fun fetchOrdersFromApi() { // Đổi thành public để các màn hình khác có thể gọi reload
         viewModelScope.launch {
             try {
-                // 1. Gọi API qua instance của Retrofit
                 val response = RetrofitClient.instance.getOrders()
-
-                // 2. .map này sẽ tự động nhận diện là của Kotlin List sau khi xóa import sai
                 val processedList = response.map { order ->
-                    // .copy() lúc này sẽ nhận diện được cả status và recipient
                     order.copy(status = mapStatus(order.status))
-                }
-                    .sortedByDescending { it.orderDate }
-                    .take(5)
+                }.sortedByDescending { it.orderDate }
+                // --- ĐÃ XÓA DÒNG .take(5) ĐỂ LẤY HẾT ---
 
                 _orders.value = processedList
             } catch (e: Exception) {
@@ -37,7 +32,6 @@ class OrderViewModel : ViewModel() {
             }
         }
     }
-
     private fun mapStatus(sqlStatus: String): String {
         return when (sqlStatus) {
             "Pending" -> "Chờ xác nhận"
