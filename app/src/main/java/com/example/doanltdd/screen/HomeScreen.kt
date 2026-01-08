@@ -1,8 +1,7 @@
 package com.example.doanltdd.screen
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,12 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.doanltdd.R
 import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.viewmodel.OrderViewModel
+
 
 @Composable
 fun HomeScreen(
@@ -34,9 +39,26 @@ fun HomeScreen(
 ) {
     val orders by viewModel.orders.collectAsState()
 
+    // Chỉ lấy 5 đơn mới nhất hiển thị
     val recentOrders = orders.take(5)
 
     var isMenuOpen by remember { mutableStateOf(false) }
+
+    // --- ĐOẠN CODE MỚI: TỰ ĐỘNG LOAD LẠI DATA KHI MÀN HÌNH HIỆN LÊN ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Khi quay lại màn hình này, gọi API lấy dữ liệu mới nhất
+                viewModel.fetchOrdersFromApi()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    // -------------------------------------------------------------------
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -49,6 +71,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Hàng tiêu đề + Nút Menu
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,6 +103,7 @@ fun HomeScreen(
                 }
             }
 
+            // Danh sách đơn hàng
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -88,12 +112,22 @@ fun HomeScreen(
                 items(recentOrders) { order ->
                     OrderCardItem(
                         order = order,
-                        onClick = { onNavigateToDetail(order.id.toInt()) }
+                        onClick = {
+                            // Chuyển string ID sang Int để phù hợp với callback
+                            // Lưu ý: Nếu ID có chứ cái (VD: DH01) thì app sẽ crash.
+                            // Tốt nhất nên đổi callback onNavigateToDetail nhận String.
+                            try {
+                                onNavigateToDetail(order.id.toInt())
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
                     )
                 }
             }
         }
 
+        // Lớp phủ tối khi mở menu
         if (isMenuOpen) {
             Box(
                 modifier = Modifier
@@ -106,6 +140,7 @@ fun HomeScreen(
             )
         }
 
+        // Menu trượt
         AnimatedVisibility(
             visible = isMenuOpen,
             enter = slideInHorizontally(initialOffsetX = { it }),
@@ -143,6 +178,7 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Mã đơn: #${order.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                // Xử lý null an toàn cho tên người nhận
                 Text("Người nhận: ${order.recipient ?: "Khách lẻ"}", fontSize = 12.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(4.dp))
                 StatusLabel(order.status)
@@ -180,7 +216,7 @@ fun SideMenuContent(
 
         MenuItem(
             text = "Quản lý đơn hàng",
-            icon = Icons.Default.ListAlt, // Đổi icon cho hợp
+            icon = Icons.Default.ListAlt,
             isActive = false,
             onClick = onNavigateToOrders
         )
@@ -217,7 +253,7 @@ fun MenuItem(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .background(if(isActive) Color.Gray else Color.LightGray, CircleShape),
+                .background(if (isActive) Color.Gray else Color.LightGray, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
@@ -230,14 +266,25 @@ fun MenuItem(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun HomeHeader() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.HomeRepairService, null, modifier = Modifier.size(28.dp), tint = Color(0xFF1A237E))
+            Image(
+                painter = painterResource(id = R.drawable.logo_nuochoa),
+                contentDescription = "Logo App",
+                modifier = Modifier.size(40.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("N Perfume", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A237E))
+            Text(
+                " N Perfume",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF1A237E)
+            )
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -254,12 +301,13 @@ fun HomeHeader() {
 }
 
 @Composable
-fun StatusLabel(status: String) {
+private fun StatusLabel(status: String) {
     val (bgColor, txtColor) = when (status) {
         "Chờ xác nhận" -> Color(0xFFE3F2FD) to Color(0xFF2196F3)
         "Đã xác nhận" -> Color(0xFFE8EAF6) to Color(0xFF3F51B5)
         "Đang giao"   -> Color(0xFFFFF9C4) to Color(0xFFFBC02D)
         "Đã Giao"     -> Color(0xFFE8F5E9) to Color(0xFF4CAF50)
+        "Đã hủy"      -> Color(0xFFFFEBEE) to Color(0xFFF44336) // Bổ sung màu cho Đã hủy
         else          -> Color(0xFFFFEBEE) to Color(0xFFF44336)
     }
 

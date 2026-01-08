@@ -18,6 +18,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.viewmodel.OrderViewModel
+// --- IMPORT QUAN TRỌNG ĐỂ LẮNG NGHE SỰ KIỆN LOAD LẠI ---
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 @Composable
 fun OrderManagementScreen(
@@ -26,6 +30,22 @@ fun OrderManagementScreen(
     onBack: () -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
+
+    // --- ĐOẠN CODE MỚI: TỰ ĐỘNG LOAD LẠI KHI QUAY VỀ MÀN HÌNH NÀY ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Gọi API lấy danh sách mới nhất mỗi khi màn hình hiện lên
+                viewModel.fetchOrdersFromApi()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    // ----------------------------------------------------------------
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FB))) {
         Row(
@@ -43,7 +63,17 @@ fun OrderManagementScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(orders) { order ->
-                OrderManagementItem(order, onDetailClick = { onNavigateToDetail(order.id) })
+                OrderManagementItem(
+                    order = order,
+                    onDetailClick = {
+                        // Chuyển đổi ID sang Int để tránh lỗi type mismatch
+                        try {
+                            onNavigateToDetail(order.id.toInt())
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                )
             }
         }
     }
@@ -63,11 +93,12 @@ fun OrderManagementItem(order: Order, onDetailClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Mã đơn hàng : #${order.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("Người nhận: ${order.recipient}", fontSize = 12.sp, color = Color.Gray)
+                // Xử lý null cho tên người nhận để an toàn
+                Text("Người nhận: ${order.recipient ?: "Khách lẻ"}", fontSize = 12.sp, color = Color.Gray)
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                StatusLabel(order.status) // Dùng lại hàm StatusLabel cũ
+                StatusLabel(order.status) // Gọi hàm StatusLabel ở dưới
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onDetailClick,
@@ -80,5 +111,28 @@ fun OrderManagementItem(order: Order, onDetailClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+// --- Copy hàm này vào để file chạy được độc lập ---
+@Composable
+private fun StatusLabel(status: String) {
+    val (bgColor, txtColor) = when (status) {
+        "Chờ xác nhận" -> Color(0xFFE3F2FD) to Color(0xFF2196F3)
+        "Đã xác nhận" -> Color(0xFFE8EAF6) to Color(0xFF3F51B5)
+        "Đang giao"   -> Color(0xFFFFF9C4) to Color(0xFFFBC02D)
+        "Đã Giao"     -> Color(0xFFE8F5E9) to Color(0xFF4CAF50)
+        "Đã hủy"      -> Color(0xFFFFEBEE) to Color(0xFFF44336)
+        else          -> Color(0xFFFFEBEE) to Color(0xFFF44336)
+    }
+
+    Surface(color = bgColor, shape = RoundedCornerShape(50)) {
+        Text(
+            text = status,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+            fontSize = 10.sp,
+            color = txtColor,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

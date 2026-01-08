@@ -215,3 +215,25 @@ fun ProductItemRow(product: ProductInOrder) {
         }
     }
 }
+
+@Composable
+private fun StatusLabel(status: String) {
+    val (bgColor, txtColor) = when (status) {
+        "Chờ xác nhận" -> Color(0xFFE3F2FD) to Color(0xFF2196F3)
+        "Đã xác nhận" -> Color(0xFFE8EAF6) to Color(0xFF3F51B5)
+        "Đang giao"   -> Color(0xFFFFF9C4) to Color(0xFFFBC02D)
+        "Đã Giao"     -> Color(0xFFE8F5E9) to Color(0xFF4CAF50)
+        "Đã hủy"      -> Color(0xFFFFEBEE) to Color(0xFFF44336)
+        else          -> Color(0xFFFFEBEE) to Color(0xFFF44336)
+    }
+
+    Surface(color = bgColor, shape = RoundedCornerShape(50)) {
+        Text(
+            text = status,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+            fontSize = 10.sp,
+            color = txtColor,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
