@@ -22,13 +22,12 @@ import com.example.doanltdd.viewmodel.OrderViewModel
 @Composable
 fun OrderManagementScreen(
     viewModel: OrderViewModel = viewModel(),
-    onNavigateToDetail: (Int) -> Unit, // Callback chuyển trang chi tiết
+    onNavigateToDetail: (Int) -> Unit,
     onBack: () -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FB))) {
-        // Header đơn giản có nút Back
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -70,7 +69,6 @@ fun OrderManagementItem(order: Order, onDetailClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 StatusLabel(order.status) // Dùng lại hàm StatusLabel cũ
                 Spacer(modifier = Modifier.height(8.dp))
-                // Nút CHI TIẾT màu xám
                 Button(
                     onClick = onDetailClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray.copy(alpha = 0.5f)),

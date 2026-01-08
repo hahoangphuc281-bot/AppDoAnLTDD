@@ -7,7 +7,7 @@ import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.data.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch // Đảm bảo import này để dùng viewModelScope.launch
+import kotlinx.coroutines.launch
 
 class OrderViewModel : ViewModel() {
     private val _orders = MutableStateFlow<List<Order>>(emptyList())
@@ -17,7 +17,7 @@ class OrderViewModel : ViewModel() {
         fetchOrdersFromApi()
     }
 
-    fun fetchOrdersFromApi() { // Đổi thành public để các màn hình khác có thể gọi reload
+    fun fetchOrdersFromApi() {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.instance.getOrders()

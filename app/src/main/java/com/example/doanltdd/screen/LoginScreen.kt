@@ -28,7 +28,7 @@ import com.example.doanltdd.viewmodel.LoginViewModel
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit // <--- SỬA TẠI ĐÂY: Thêm callback chuyển màn
+    onLoginSuccess: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -41,7 +41,6 @@ fun LoginScreen(
     val errorMsg by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // Lắng nghe trạng thái đăng nhập để chuyển màn hình
     LaunchedEffect(loginState, errorMsg) {
         if (loginState == true) {
             Toast.makeText(context, "Chào mừng Admin!", Toast.LENGTH_SHORT).show()

@@ -30,20 +30,16 @@ fun HomeScreen(
     viewModel: OrderViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToOrders: () -> Unit,
-    // THÊM callback này để bấm vào đơn hàng ở Home cũng xem được chi tiết
     onNavigateToDetail: (Int) -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
 
-    // Chỉ lấy 5 đơn mới nhất để hiển thị ở Home
     val recentOrders = orders.take(5)
 
-    // KHAI BÁO BIẾN TRẠNG THÁI MENU (Lần trước bạn thiếu dòng này)
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // --- 1. NỘI DUNG CHÍNH ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,7 +49,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Hàng tiêu đề + Nút Menu (4 ô vuông)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +63,6 @@ fun HomeScreen(
                     color = Color(0xFF1D2939)
                 )
 
-                // NÚT MỞ MENU
                 IconButton(
                     onClick = { isMenuOpen = true },
                     modifier = Modifier
@@ -86,14 +80,12 @@ fun HomeScreen(
                 }
             }
 
-            // Danh sách 5 đơn hàng
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(recentOrders) { order ->
-                    // Truyền sự kiện click vào đây
                     OrderCardItem(
                         order = order,
                         onClick = { onNavigateToDetail(order.id.toInt()) }
@@ -102,7 +94,6 @@ fun HomeScreen(
             }
         }
 
-        // --- 2. LỚP PHỦ TỐI (SCRIM) ---
         if (isMenuOpen) {
             Box(
                 modifier = Modifier
@@ -115,7 +106,6 @@ fun HomeScreen(
             )
         }
 
-        // --- 3. MENU TRƯỢT TỪ PHẢI SANG ---
         AnimatedVisibility(
             visible = isMenuOpen,
             enter = slideInHorizontally(initialOffsetX = { it }),
@@ -137,13 +127,12 @@ fun HomeScreen(
     }
 }
 
-// --- UI CARD ĐƠN HÀNG (ĐÃ THÊM CLICKABLE) ---
 @Composable
 fun OrderCardItem(order: Order, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }, // Cho phép bấm vào card
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -154,7 +143,6 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Mã đơn: #${order.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                // Xử lý null an toàn cho recipient
                 Text("Người nhận: ${order.recipient ?: "Khách lẻ"}", fontSize = 12.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(4.dp))
                 StatusLabel(order.status)
@@ -165,7 +153,6 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
     }
 }
 
-// --- MENU BÊN PHẢI ---
 @Composable
 fun SideMenuContent(
     onClose: () -> Unit,
@@ -182,7 +169,6 @@ fun SideMenuContent(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Menu Item 1: Home
         MenuItem(
             text = "Home",
             icon = Icons.Default.Home,
@@ -192,7 +178,6 @@ fun SideMenuContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Menu Item 2: Quản lý đơn hàng
         MenuItem(
             text = "Quản lý đơn hàng",
             icon = Icons.Default.ListAlt, // Đổi icon cho hợp
@@ -202,7 +187,6 @@ fun SideMenuContent(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Nút Đăng xuất
         Button(
             onClick = onLogout,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
@@ -215,7 +199,6 @@ fun SideMenuContent(
     }
 }
 
-// --- ITEM MENU BO TRÒN ---
 @Composable
 fun MenuItem(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, isActive: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isActive) Color.Gray.copy(alpha = 0.4f) else Color.White
@@ -244,7 +227,6 @@ fun MenuItem(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector
     }
 }
 
-// --- HEADER ---
 @Composable
 fun HomeHeader() {
     Row(
@@ -271,7 +253,6 @@ fun HomeHeader() {
     }
 }
 
-// --- STATUS LABEL ---
 @Composable
 fun StatusLabel(status: String) {
     val (bgColor, txtColor) = when (status) {

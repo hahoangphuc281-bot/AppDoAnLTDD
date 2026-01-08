@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
-    // Trạng thái: null = chưa làm gì, true = thành công (Admin), false = thất bại
     private val _loginState = MutableStateFlow<Boolean?>(null)
     val loginState: StateFlow<Boolean?> = _loginState
 
@@ -23,15 +22,13 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Gọi API
                 val request = User(username, pass)
                 val response = RetrofitClient.instance.login(request)
 
                 if (response.isSuccessful && response.body()?.succeeded == true) {
-                    // Logic kiểm tra Admin cũ của bạn
                     val isAdmin = response.body()?.is_admin ?: 0
                     if (isAdmin == 1) {
-                        _loginState.value = true // Đúng là Admin
+                        _loginState.value = true
                     } else {
                         _loginState.value = false
                         _errorMessage.value = "Bạn không có quyền Admin!"
@@ -50,7 +47,6 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    // Hàm reset để đăng nhập lại nếu muốn
     fun resetState() {
         _loginState.value = null
         _errorMessage.value = ""

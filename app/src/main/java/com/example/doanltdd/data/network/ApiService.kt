@@ -15,11 +15,9 @@ interface ApiService {
     @POST("api/users/login")
     suspend fun login(@Body request: User): Response<LoginResponse>
 
-    // --- SỬA LẠI THÀNH @GET CHO ĐÚNG CHUẨN ---
     @GET("api/orders/all")
     suspend fun getOrders(): List<Order>
 
-    // --- GIỮ NGUYÊN @GET VÀ PATH ---
     @GET("api/orders/detail/{id}")
     suspend fun getOrderDetail(@Path("id") id: Int): Response<OrderDetailResponse>
 

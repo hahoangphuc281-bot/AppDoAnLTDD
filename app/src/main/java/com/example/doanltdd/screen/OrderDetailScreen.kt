@@ -34,7 +34,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Hàm load lại dữ liệu
     fun loadData() {
         scope.launch {
             try {
@@ -46,10 +45,8 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
         }
     }
 
-    // Gọi API lần đầu
     LaunchedEffect(orderId) { loadData() }
 
-    // Hàm gọi API cập nhật status
     fun updateStatus(newStatusEnglish: String) {
         scope.launch {
             try {
@@ -73,14 +70,12 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
     } else {
         val order = orderDetail!!
         Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-            // ... (Header giữ nguyên) ...
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
                 Text("Đơn hàng : #${order.id}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                // Hàng Trạng thái + Nút Thay đổi
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -89,7 +84,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Trạng thái:", fontSize = 12.sp, color = Color.Gray)
                         Spacer(modifier = Modifier.width(4.dp))
-                        // Map status từ Anh sang Việt để hiển thị
                         StatusLabel(mapStatusToVietnamese(order.status))
                     }
                     Button(
@@ -101,7 +95,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                     }
                 }
 
-                // ... (Phần InfoRow, Product List giữ nguyên như code cũ của bạn) ...
                 Spacer(modifier = Modifier.height(12.dp))
                 InfoRow("Người nhận", order.recipient)
                 InfoRow("Ngày lên đơn", order.orderDate.take(10))
@@ -111,7 +104,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                 Divider(color = Color.LightGray, thickness = 0.5.dp)
             }
 
-            // Danh sách sản phẩm
             LazyColumn(
                 modifier = Modifier.weight(1f).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -121,7 +113,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                 }
             }
 
-            // ... (Footer giữ nguyên) ...
             Column(modifier = Modifier.padding(16.dp)) {
                 Divider()
                 Spacer(modifier = Modifier.height(10.dp))
@@ -131,7 +122,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Nút Trở lại (đặt trong Box để căn phải)
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                     Button(
                         onClick = onBack,
@@ -144,15 +134,12 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
             }
         }
 
-        // --- HỘP THOẠI CHỌN TRẠNG THÁI (DIALOG) ---
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 title = { Text("Cập nhật trạng thái") },
                 text = {
                     Column {
-                        // Danh sách các trạng thái có thể chọn
-                        // Key: Tiếng Anh (Gửi lên Server), Value: Tiếng Việt (Hiển thị)
                         val statusOptions = listOf(
                             "Pending" to "Chờ xác nhận",
                             "Confirmed" to "Đã xác nhận",
@@ -165,12 +152,12 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { updateStatus(eng) } // Chọn cái nào thì update cái đó
+                                    .clickable { updateStatus(eng) }
                                     .padding(vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    selected = (order.status == eng), // Nếu trùng status hiện tại thì tick
+                                    selected = (order.status == eng),
                                     onClick = { updateStatus(eng) }
                                 )
                                 Text(text = viet, modifier = Modifier.padding(start = 8.dp))
@@ -186,7 +173,6 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
     }
 }
 
-// Hàm hỗ trợ map status hiển thị
 fun mapStatusToVietnamese(status: String): String {
     return when (status) {
         "Pending" -> "Chờ xác nhận"
@@ -198,7 +184,6 @@ fun mapStatusToVietnamese(status: String): String {
     }
 }
 
-// ... Giữ nguyên ProductItemRow và InfoRow của bạn
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 4.dp)) {

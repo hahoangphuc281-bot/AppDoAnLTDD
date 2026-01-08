@@ -6,11 +6,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.doanltdd.screen.HomeScreen
 import com.example.doanltdd.screen.LoginScreen
-// Đảm bảo bạn đã tạo 2 file màn hình này trong package screen, nếu chưa thì import sẽ báo đỏ
 import com.example.doanltdd.screen.OrderManagementScreen
 import com.example.doanltdd.screen.OrderDetailScreen
 
-// 1. Cập nhật thêm route chi tiết vào AppRoutes
 object AppRoutes {
     const val LOGIN = "login"
     const val HOME = "home"
@@ -48,29 +46,25 @@ fun AppNavGraph() {
         }
 
         // --- MÀN HÌNH 3: QUẢN LÝ ĐƠN HÀNG (LIST) ---
-        // Đây là phần bạn thêm vào từ "PHẦN 4"
         composable(AppRoutes.ORDER_MANAGEMENT) {
             OrderManagementScreen(
                 onBack = {
-                    navController.popBackStack() // Quay về Home
+                    navController.popBackStack()
                 },
                 onNavigateToDetail = { orderId ->
-                    // Chuyển sang màn chi tiết, nối thêm ID vào đuôi URL
                     navController.navigate("${AppRoutes.ORDER_DETAIL}/$orderId")
                 }
             )
         }
 
         // --- MÀN HÌNH 4: CHI TIẾT ĐƠN HÀNG ---
-        // Đây là phần bạn thêm vào từ "PHẦN 4"
         composable("${AppRoutes.ORDER_DETAIL}/{orderId}") { backStackEntry ->
-            // Lấy orderId từ đường dẫn
             val orderId = backStackEntry.arguments?.getString("orderId") ?: "0"
 
             OrderDetailScreen(
                 orderId = orderId,
                 onBack = {
-                    navController.popBackStack() // Quay về danh sách đơn hàng
+                    navController.popBackStack()
                 }
             )
         }
