@@ -6,12 +6,29 @@ import androidx.lifecycle.viewModelScope
 import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.data.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class OrderViewModel : ViewModel() {
     private val _orders = MutableStateFlow<List<Order>>(emptyList())
-    val orders: StateFlow<List<Order>> = _orders
+
+    // --- KHẮC PHỤC LỖI 1: THÊM DÒNG NÀY ĐỂ HOMESCREEN GỌI ĐƯỢC ---
+    val orders: StateFlow<List<Order>> = _orders.asStateFlow()
+
+    private val _filterStatus = MutableStateFlow("All")
+
+    // Biến này dùng cho màn hình Quản lý đơn hàng (để lọc)
+    val filteredOrders: StateFlow<List<Order>> = combine(_orders, _filterStatus) { orders, filter ->
+        if (filter == "All") {
+            orders
+        } else {
+            orders.filter { it.status == filter }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         fetchOrdersFromApi()
@@ -22,9 +39,9 @@ class OrderViewModel : ViewModel() {
             try {
                 val response = RetrofitClient.instance.getOrders()
                 val processedList = response.map { order ->
-                    order.copy(status = mapStatus(order.status))
+                    // Giữ nguyên status tiếng Anh từ Server để xử lý logic màu sắc bên UI
+                    order.copy(status = order.status)
                 }.sortedByDescending { it.orderDate }
-                // --- ĐÃ XÓA DÒNG .take(5) ĐỂ LẤY HẾT ---
 
                 _orders.value = processedList
             } catch (e: Exception) {
@@ -32,14 +49,8 @@ class OrderViewModel : ViewModel() {
             }
         }
     }
-    private fun mapStatus(sqlStatus: String): String {
-        return when (sqlStatus) {
-            "Pending" -> "Chờ xác nhận"
-            "Confirmed" -> "Đã xác nhận"
-            "Shipping" -> "Đang giao"
-            "Completed" -> "Đã Giao"
-            "Cancelled" -> "Đã hủy"
-            else -> sqlStatus
-        }
+
+    fun setFilter(status: String) {
+        _filterStatus.value = status
     }
 }

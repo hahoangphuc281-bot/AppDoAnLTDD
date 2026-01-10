@@ -84,10 +84,10 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Trạng thái:", fontSize = 12.sp, color = Color.Gray)
                         Spacer(modifier = Modifier.width(4.dp))
-                        StatusLabel(mapStatusToVietnamese(order.status))
+                        OrderDetailStatusLabel(mapStatusToVietnamese(order.status))
                     }
                     Button(
-                        onClick = { showDialog = true }, // Mở Dialog
+                        onClick = { showDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
                         contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
@@ -97,9 +97,11 @@ fun OrderDetailScreen(orderId: String, onBack: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
                 InfoRow("Người nhận", order.recipient)
+
+                InfoRow("Số điện thoại", order.phone ?: "Chưa cập nhật")
+
                 InfoRow("Ngày lên đơn", order.orderDate.take(10))
                 InfoRow("Địa chỉ", order.address ?: "Chưa cập nhật")
-
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = Color.LightGray, thickness = 0.5.dp)
             }
@@ -217,7 +219,7 @@ fun ProductItemRow(product: ProductInOrder) {
 }
 
 @Composable
-private fun StatusLabel(status: String) {
+private fun OrderDetailStatusLabel(status: String) {
     val (bgColor, txtColor) = when (status) {
         "Chờ xác nhận" -> Color(0xFFE3F2FD) to Color(0xFF2196F3)
         "Đã xác nhận" -> Color(0xFFE8EAF6) to Color(0xFF3F51B5)

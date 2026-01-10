@@ -29,7 +29,6 @@ import com.example.doanltdd.R
 import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.viewmodel.OrderViewModel
 
-
 @Composable
 fun HomeScreen(
     viewModel: OrderViewModel = viewModel(),
@@ -37,19 +36,17 @@ fun HomeScreen(
     onNavigateToOrders: () -> Unit,
     onNavigateToDetail: (Int) -> Unit
 ) {
+    // Bây giờ dòng này sẽ hết báo lỗi đỏ vì bên ViewModel đã có biến 'orders'
     val orders by viewModel.orders.collectAsState()
 
-    // Chỉ lấy 5 đơn mới nhất hiển thị
     val recentOrders = orders.take(5)
 
     var isMenuOpen by remember { mutableStateOf(false) }
 
-    // --- ĐOẠN CODE MỚI: TỰ ĐỘNG LOAD LẠI DATA KHI MÀN HÌNH HIỆN LÊN ---
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // Khi quay lại màn hình này, gọi API lấy dữ liệu mới nhất
                 viewModel.fetchOrdersFromApi()
             }
         }
@@ -58,7 +55,6 @@ fun HomeScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    // -------------------------------------------------------------------
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -71,7 +67,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Hàng tiêu đề + Nút Menu
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,7 +98,6 @@ fun HomeScreen(
                 }
             }
 
-            // Danh sách đơn hàng
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -113,9 +107,6 @@ fun HomeScreen(
                     OrderCardItem(
                         order = order,
                         onClick = {
-                            // Chuyển string ID sang Int để phù hợp với callback
-                            // Lưu ý: Nếu ID có chứ cái (VD: DH01) thì app sẽ crash.
-                            // Tốt nhất nên đổi callback onNavigateToDetail nhận String.
                             try {
                                 onNavigateToDetail(order.id.toInt())
                             } catch (e: Exception) {
@@ -127,7 +118,6 @@ fun HomeScreen(
             }
         }
 
-        // Lớp phủ tối khi mở menu
         if (isMenuOpen) {
             Box(
                 modifier = Modifier
@@ -140,7 +130,6 @@ fun HomeScreen(
             )
         }
 
-        // Menu trượt
         AnimatedVisibility(
             visible = isMenuOpen,
             enter = slideInHorizontally(initialOffsetX = { it }),
@@ -178,10 +167,11 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Mã đơn: #${order.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                // Xử lý null an toàn cho tên người nhận
                 Text("Người nhận: ${order.recipient ?: "Khách lẻ"}", fontSize = 12.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(4.dp))
-                StatusLabel(order.status)
+
+                // Gọi hàm hiển thị Status
+                HOMEStatusLabel(order.status)
             }
 
             Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
@@ -300,20 +290,22 @@ fun HomeHeader() {
     }
 }
 
+// --- KHẮC PHỤC LỖI 2: CẬP NHẬT HÀM STATUS LABEL ---
 @Composable
-private fun StatusLabel(status: String) {
-    val (bgColor, txtColor) = when (status) {
-        "Chờ xác nhận" -> Color(0xFFE3F2FD) to Color(0xFF2196F3)
-        "Đã xác nhận" -> Color(0xFFE8EAF6) to Color(0xFF3F51B5)
-        "Đang giao"   -> Color(0xFFFFF9C4) to Color(0xFFFBC02D)
-        "Đã Giao"     -> Color(0xFFE8F5E9) to Color(0xFF4CAF50)
-        "Đã hủy"      -> Color(0xFFFFEBEE) to Color(0xFFF44336) // Bổ sung màu cho Đã hủy
-        else          -> Color(0xFFFFEBEE) to Color(0xFFF44336)
+private fun HOMEStatusLabel(status: String) {
+    // Logic: Kiểm tra status tiếng Anh (từ Database) -> Trả về (Tên hiển thị Tiếng Việt, Màu Nền, Màu Chữ)
+    val (displayStatus, bgColor, txtColor) = when (status) {
+        "Pending"   -> Triple("Chờ xác nhận", Color(0xFFE3F2FD), Color(0xFF2196F3))
+        "Confirmed" -> Triple("Đã xác nhận", Color(0xFFE8EAF6), Color(0xFF3F51B5))
+        "Shipping"  -> Triple("Đang giao", Color(0xFFFFF9C4), Color(0xFFFBC02D))
+        "Completed" -> Triple("Đã Giao", Color(0xFFE8F5E9), Color(0xFF4CAF50))
+        "Cancelled" -> Triple("Đã hủy", Color(0xFFFFEBEE), Color(0xFFF44336))
+        else        -> Triple(status, Color(0xFFFFEBEE), Color(0xFFF44336)) // Mặc định nếu không khớp
     }
 
     Surface(color = bgColor, shape = RoundedCornerShape(50)) {
         Text(
-            text = status,
+            text = displayStatus, // Hiển thị tiếng Việt
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
             fontSize = 10.sp,
             color = txtColor,

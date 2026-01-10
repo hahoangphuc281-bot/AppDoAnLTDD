@@ -5,6 +5,10 @@ import com.google.gson.annotations.SerializedName
 data class OrderDetailResponse(
     @SerializedName("order_id") val id: Int,
     @SerializedName("Username") val recipient: String,
+
+    // --- THÊM DÒNG NÀY ---
+    @SerializedName("phone") val phone: String?,
+
     @SerializedName("order_date") val orderDate: String,
     @SerializedName("status") val status: String,
     @SerializedName("total_amount") val totalAmount: Double,
