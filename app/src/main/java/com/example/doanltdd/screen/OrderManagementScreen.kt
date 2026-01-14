@@ -165,14 +165,14 @@ fun OrderManagementItem(order: Order, onDetailClick: () -> Unit) {
 }
 
 @Composable
-fun StatusLabel(status: String) {
+fun StatusLabel(status: String?) {
     val (displayStatus, bgColor, txtColor) = when (status) {
         "Pending" -> Triple("Chờ xác nhận", Color(0xFFE3F2FD), Color(0xFF2196F3))
         "Confirmed" -> Triple("Đã xác nhận", Color(0xFFE8EAF6), Color(0xFF3F51B5))
         "Shipping" -> Triple("Đang giao", Color(0xFFFFF9C4), Color(0xFFFBC02D))
         "Completed" -> Triple("Đã Giao", Color(0xFFE8F5E9), Color(0xFF4CAF50))
         "Cancelled" -> Triple("Đã hủy", Color(0xFFFFEBEE), Color(0xFFF44336))
-        else -> Triple(status, Color.LightGray, Color.Black)
+        else -> Triple("Không rõ", Color.LightGray, Color.Black) // Handle trường hợp null hoặc lạ
     }
 
     Surface(color = bgColor, shape = RoundedCornerShape(50)) {

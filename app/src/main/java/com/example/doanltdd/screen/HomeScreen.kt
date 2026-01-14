@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -28,18 +29,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.doanltdd.R
 import com.example.doanltdd.data.model.Order
 import com.example.doanltdd.viewmodel.OrderViewModel
+import java.text.DecimalFormat
 
 @Composable
 fun HomeScreen(
     viewModel: OrderViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToOrders: () -> Unit,
-    onNavigateToDetail: (Int) -> Unit
+    onNavigateToDetail: (Int) -> Unit,
+    onNavigateToCustomers: () -> Unit // --- 1. THÊM CALLBACK NÀY ---
 ) {
-    // Bây giờ dòng này sẽ hết báo lỗi đỏ vì bên ViewModel đã có biến 'orders'
     val orders by viewModel.orders.collectAsState()
-
     val recentOrders = orders.take(5)
+
+    // --- TÍNH TOÁN THỐNG KÊ ---
+    val totalOrdersCount = orders.size
+
+    // Đổi 'totalPrice' thành 'totalAmount' cho khớp với Model Order
+    val totalRevenue = orders.filter { it.status != "Cancelled" }.sumOf { it.totalAmount }
 
     var isMenuOpen by remember { mutableStateOf(false) }
 
@@ -64,6 +71,13 @@ fun HomeScreen(
                 .background(Color(0xFFF8F9FB))
         ) {
             HomeHeader()
+
+            // --- CHÈN PHẦN THỐNG KÊ VÀO ĐÂY ---
+            DashboardStatistics(
+                totalOrders = totalOrdersCount,
+                totalRevenue = totalRevenue
+            )
+            // ----------------------------------
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -108,13 +122,16 @@ fun HomeScreen(
                         order = order,
                         onClick = {
                             try {
-                                onNavigateToDetail(order.id.toInt())
+                                onNavigateToDetail(order.id)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
                     )
                 }
+
+                // Thêm khoảng trống dưới cùng để không bị che bởi menu
+                item { Spacer(modifier = Modifier.height(20.dp)) }
             }
         }
 
@@ -145,18 +162,109 @@ fun HomeScreen(
                 onNavigateToOrders = {
                     isMenuOpen = false
                     onNavigateToOrders()
+                },
+                onNavigateToCustomers = { // --- 2. TRUYỀN CALLBACK ---
+                    isMenuOpen = false
+                    onNavigateToCustomers()
                 }
             )
         }
     }
 }
 
+// --- COMPOSABLE HIỂN THỊ 2 Ô THỐNG KÊ ---
+@Composable
+fun DashboardStatistics(totalOrders: Int, totalRevenue: Double) {
+    val formatter = DecimalFormat("#,###")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Ô Tổng đơn hàng
+        StatCard(
+            title = "Tổng đơn hàng",
+            value = totalOrders.toString(),
+            icon = Icons.Default.ReceiptLong,
+            colorStart = Color(0xFF42A5F5), // Xanh dương nhạt
+            colorEnd = Color(0xFF1976D2),   // Xanh dương đậm
+            modifier = Modifier.weight(1f)
+        )
+
+        // Ô Tổng doanh thu
+        StatCard(
+            title = "Doanh thu",
+            value = "${formatter.format(totalRevenue)}đ",
+            icon = Icons.Default.AttachMoney,
+            colorStart = Color(0xFF66BB6A), // Xanh lá nhạt
+            colorEnd = Color(0xFF388E3C),   // Xanh lá đậm
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun StatCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    colorStart: Color,
+    colorEnd: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(colorStart, colorEnd)
+                    )
+                )
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = value,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+// ------------------------------------------------
+
 @Composable
 fun OrderCardItem(order: Order, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -167,11 +275,15 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text("Mã đơn: #${order.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("Người nhận: ${order.recipient ?: "Khách lẻ"}", fontSize = 12.sp, color = Color.Gray)
+
+                // --- SỬA DÒNG NÀY ĐỂ HẾT LỖI ---
+                // Thay vì hiển thị tên người nhận (chưa có), hiển thị ID khách hàng
+                Text("Khách hàng: ID ${order.userId}", fontSize = 12.sp, color = Color.Gray)
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Gọi hàm hiển thị Status
-                HOMEStatusLabel(order.status)
+                HOMEStatusLabel(order.status ?: "Pending")
             }
 
             Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
@@ -183,7 +295,8 @@ fun OrderCardItem(order: Order, onClick: () -> Unit) {
 fun SideMenuContent(
     onClose: () -> Unit,
     onLogout: () -> Unit,
-    onNavigateToOrders: () -> Unit
+    onNavigateToOrders: () -> Unit,
+    onNavigateToCustomers: () -> Unit // --- 3. THÊM THAM SỐ VÀO ĐÂY ---
 ) {
     Column(
         modifier = Modifier
@@ -210,6 +323,17 @@ fun SideMenuContent(
             isActive = false,
             onClick = onNavigateToOrders
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // --- 4. THÊM MỤC MENU MỚI ---
+        MenuItem(
+            text = "Quản lý khách hàng",
+            icon = Icons.Default.Person, // Icon người dùng
+            isActive = false,
+            onClick = onNavigateToCustomers
+        )
+        // ----------------------------
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -290,22 +414,20 @@ fun HomeHeader() {
     }
 }
 
-// --- KHẮC PHỤC LỖI 2: CẬP NHẬT HÀM STATUS LABEL ---
 @Composable
 private fun HOMEStatusLabel(status: String) {
-    // Logic: Kiểm tra status tiếng Anh (từ Database) -> Trả về (Tên hiển thị Tiếng Việt, Màu Nền, Màu Chữ)
     val (displayStatus, bgColor, txtColor) = when (status) {
         "Pending"   -> Triple("Chờ xác nhận", Color(0xFFE3F2FD), Color(0xFF2196F3))
         "Confirmed" -> Triple("Đã xác nhận", Color(0xFFE8EAF6), Color(0xFF3F51B5))
         "Shipping"  -> Triple("Đang giao", Color(0xFFFFF9C4), Color(0xFFFBC02D))
         "Completed" -> Triple("Đã Giao", Color(0xFFE8F5E9), Color(0xFF4CAF50))
         "Cancelled" -> Triple("Đã hủy", Color(0xFFFFEBEE), Color(0xFFF44336))
-        else        -> Triple(status, Color(0xFFFFEBEE), Color(0xFFF44336)) // Mặc định nếu không khớp
+        else        -> Triple(status, Color(0xFFFFEBEE), Color(0xFFF44336))
     }
 
     Surface(color = bgColor, shape = RoundedCornerShape(50)) {
         Text(
-            text = displayStatus, // Hiển thị tiếng Việt
+            text = displayStatus,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
             fontSize = 10.sp,
             color = txtColor,
